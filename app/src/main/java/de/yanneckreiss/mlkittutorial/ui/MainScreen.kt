@@ -3,18 +3,22 @@ package de.yanneckreiss.mlkittutorial.ui
 
 import android.Manifest
 import android.app.Application
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import de.yanneckreiss.mlkittutorial.ui.camera.CameraScreen
 import de.yanneckreiss.mlkittutorial.ui.history.HistoryScreen
 import de.yanneckreiss.mlkittutorial.ui.no_permission.NoPermissionScreen
-import de.yanneckreiss.mlkittutorial.ui.HomeScreen
 import de.yanneckreiss.mlkittutorial.viewmodel.HistoryViewModel
 
 @Composable
@@ -53,9 +57,13 @@ fun MainScreen() {
                 )
             }
             composable("history") {
+                val vm: HistoryViewModel = viewModel(
+                    factory = HistoryViewModel.provideFactory(app)
+                )
                 HistoryScreen(
-                    history = history,
-                    onBack  = { navController.popBackStack() }
+                    history  = vm.historyList.collectAsState().value,
+                    onBack   = { navController.popBackStack() },
+                    historyVm = vm
                 )
             }
         }

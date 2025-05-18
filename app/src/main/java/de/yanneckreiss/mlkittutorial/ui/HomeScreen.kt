@@ -13,24 +13,26 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @SuppressLint("ComposeModifierMissing")
 @Composable
 fun HomeScreen(
-    onLiveScan: ()->Unit,
-    onHistory:  ()->Unit
+    onLiveScan: () -> Unit,
+    onHistory:   () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        verticalArrangement   = Arrangement.Center,
+        horizontalAlignment   = Alignment.CenterHorizontally
     ) {
         Text("Text Recognizer", style = MaterialTheme.typography.h4)
         Spacer(Modifier.height(32.dp))
 
+        // ◾ Live Scan
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -41,7 +43,7 @@ fun HomeScreen(
                 modifier = Modifier.padding(24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.CameraAlt, contentDescription = null)
+                Icon(Icons.Default.CameraAlt, contentDescription = "Live Scan")
                 Spacer(Modifier.width(16.dp))
                 Text("Live Scan", style = MaterialTheme.typography.h6)
             }
@@ -49,6 +51,7 @@ fun HomeScreen(
 
         Spacer(Modifier.height(16.dp))
 
+        // ◾ History
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -59,10 +62,16 @@ fun HomeScreen(
                 modifier = Modifier.padding(24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.History, contentDescription = null)
+                Icon(Icons.Default.History, contentDescription = "History")
                 Spacer(Modifier.width(16.dp))
                 Text("History", style = MaterialTheme.typography.h6)
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun Preview_HomeScreen() {
+    HomeScreen(onLiveScan = {}, onHistory = {})
 }

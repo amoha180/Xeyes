@@ -1,3 +1,4 @@
+// app/src/main/java/de/yanneckreiss/mlkittutorial/data/HistoryDataStore.kt
 package de.yanneckreiss.mlkittutorial.data
 
 import android.content.Context
@@ -8,36 +9,52 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.util.UUID
 
-// ① Extension property to get DataStore<Preferences>
-private val Context.dataStore by preferencesDataStore(name = "history_prefs")
+private val Context.dataStore by preferencesDataStore("history_prefs")
 
-class HistoryDataStore(private val context: Context) {
+class HistoryDataStore(context: Context) {
+    private val ds = context.dataStore
     private val gson = Gson()
-    private val HISTORY_KEY = stringPreferencesKey("history_list")
+    private val KEY = stringPreferencesKey("history_list")
 
-    /** A Flow of the list of strings, newest first */
-    val historyFlow: Flow<List<String>> = context.dataStore.data
+    /** Flow of all entries, newest‐first */
+    val historyFlow: Flow<List<HistoryEntry>> = ds.data
         .map { prefs ->
-            val json = prefs[HISTORY_KEY] ?: "[]"
-            // parse JSON array into List<String>
-            gson.fromJson<List<String>>(json, object: TypeToken<List<String>>(){}.type)
+            val json = prefs[KEY] ?: "[]"
+            gson.fromJson(
+                json,
+                object: TypeToken<List<HistoryEntry>>(){}.type
+            )
         }
 
-    /** Add a new entry at the front */
+    /** Add new entry */
     suspend fun add(text: String) {
-        context.dataStore.edit { prefs ->
-            val json = prefs[HISTORY_KEY] ?: "[]"
-            val list = gson.fromJson<MutableList<String>>(json, object: TypeToken<MutableList<String>>(){}.type)
-            list.add(0, text)
-            prefs[HISTORY_KEY] = gson.toJson(list)
+        ds.edit { prefs ->
+            val list: MutableList<HistoryEntry> = gson.fromJson(
+                prefs[KEY] ?: "[]",
+                object: TypeToken<MutableList<HistoryEntry>>(){}.type
+            )
+            list.add(0, HistoryEntry(UUID.randomUUID().toString(), text))
+            prefs[KEY] = gson.toJson(list)
         }
     }
 
-    /** Wipe history */
-    suspend fun clear() {
-        context.dataStore.edit { prefs ->
-            prefs[HISTORY_KEY] = "[]"
+    /** Update an existing entry’s text */
+    suspend fun update(id: String, newText: String) {
+        ds.edit { prefs ->
+            val list: MutableList<HistoryEntry> = gson.fromJson(
+                prefs[KEY] ?: "[]",
+                object: TypeToken<MutableList<HistoryEntry>>(){}.type
+            )
+            val idx = list.indexOfFirst { it.id == id }
+            if (idx >= 0) {
+                list[idx] = list[idx].copy(text = newText)
+                prefs[KEY] = gson.toJson(list)
+            }
         }
     }
+
+    /** Clear all */
+    suspend fun clear() = ds.edit { it[KEY] = "[]" }
 }
