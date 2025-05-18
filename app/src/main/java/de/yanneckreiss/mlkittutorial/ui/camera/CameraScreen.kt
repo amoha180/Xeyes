@@ -5,7 +5,7 @@ import android.content.Context
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.camera.core.AspectRatio
-import androidx.camera.view.CameraController
+import androidx.camera.view.CameraController.OutputSize
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
@@ -49,12 +49,12 @@ fun CameraScreen(
     onBack:       () -> Unit,
     onManualSnap: (recognizedText: String) -> Unit
 ) {
-    val context        = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current as LifecycleOwner
+    val context         = LocalContext.current
+    val lifecycleOwner  = LocalLifecycleOwner.current as LifecycleOwner
     val cameraController = remember { LifecycleCameraController(context) }
     var detectedText by remember { mutableStateOf("No text detected yet...") }
 
-    // ML Kit callback
+    // Callback from ML Kit
     fun onTextUpdated(updatedText: String) {
         detectedText = updatedText
     }
@@ -65,7 +65,7 @@ fun CameraScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Camera preview
+            // 1) Camera preview
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { ctx ->
@@ -89,27 +89,27 @@ fun CameraScreen(
                 }
             )
 
-            // Back button
+            // 2) Back button
             IconButton(
                 onClick = onBack,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(16.dp)
                     .background(
-                        Color.Black.copy(alpha = 0.6f),
+                        MaterialTheme.colors.surface.copy(alpha = 0.7f),
                         shape = MaterialTheme.shapes.small
                     )
             ) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back")
             }
 
-            // Detected-text overlay (lifted up)
+            // 3) Enlarged, scrollable detected-text overlay
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
                     .align(Alignment.BottomCenter)
-                    .offset(y = (-88).dp)              // raise above FAB
+                    .offset(y = (-88).dp)             // raise above FAB
                     .background(Color.Black.copy(alpha = 0.7f))
                     .padding(12.dp)
             ) {
@@ -123,13 +123,13 @@ fun CameraScreen(
                 )
             }
 
-            // Manual capture FAB
+            // 4) Manual capture FAB
             FloatingActionButton(
                 onClick = { onManualSnap(detectedText) },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
-                    .zIndex(1f)                       // draw on top
+                    .zIndex(1f)                    // draw on top
             ) {
                 Icon(Icons.Default.Camera, contentDescription = "Capture")
             }
@@ -144,12 +144,14 @@ private fun startTextRecognition(
     previewView: PreviewView,
     onDetectedTextUpdated: (String) -> Unit
 ) {
-    // Use 16:9 for more accurate ML cropping
-    cameraController.imageAnalysisTargetSize = CameraController.OutputSize(AspectRatio.RATIO_16_9)
+    cameraController.imageAnalysisTargetSize =
+        OutputSize(AspectRatio.RATIO_16_9)
+
     cameraController.setImageAnalysisAnalyzer(
         ContextCompat.getMainExecutor(context),
         TextRecognitionAnalyzer(onDetectedTextUpdated)
     )
+
     cameraController.bindToLifecycle(lifecycleOwner)
     previewView.controller = cameraController
 }

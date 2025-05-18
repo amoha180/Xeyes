@@ -137,7 +137,7 @@ fun HistoryScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 100.dp),
-                        textStyle = LocalTextStyle.current.copy(color = Color.Black)
+                        textStyle = LocalTextStyle.current.copy(color = Color.White)
                     )
                 },
                 confirmButton = {

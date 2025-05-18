@@ -6,33 +6,38 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import de.yanneckreiss.mlkittutorial.ui.MainScreen
-import de.yanneckreiss.mlkittutorial.ui.theme.JetpackComposeMLKitTutorialTheme
+import de.yanneckreiss.mlkittutorial.ui.splash.SplashScreen
+import de.yanneckreiss.mlkittutorial.ui.theme.MLKitTutorialTheme
 
 class MainActivity : ComponentActivity() {
 
-    // Launcher for the CAMERA permission request
     private val requestCameraPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            // You could react to denial here (e.g. show a Toast),
-            // but we simply let MainScreen re-query ContextCompat below.
-        }
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ① If we don’t already have CAMERA, fire the OS dialog now.
+        // Ask for CAMERA at launch if needed
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             != PackageManager.PERMISSION_GRANTED
         ) {
             requestCameraPermission.launch(Manifest.permission.CAMERA)
         }
 
-        // ② Now set up your Compose UI (which can still check again if needed)
         setContent {
-            JetpackComposeMLKitTutorialTheme {
-                MainScreen()
+            MLKitTutorialTheme {
+                var showSplash by remember { mutableStateOf(true) }
+                if (showSplash) {
+                    SplashScreen { showSplash = false }
+                } else {
+                    MainScreen()
+                }
             }
         }
     }
