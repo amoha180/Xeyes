@@ -2,54 +2,60 @@
 package de.yanneckreiss.mlkittutorial.ui
 
 import android.Manifest
+import android.app.Application
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import com.google.accompanist.permissions.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.*
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import de.yanneckreiss.mlkittutorial.ui.camera.CameraScreen
 import de.yanneckreiss.mlkittutorial.ui.history.HistoryScreen
 import de.yanneckreiss.mlkittutorial.ui.no_permission.NoPermissionScreen
 import de.yanneckreiss.mlkittutorial.ui.HomeScreen
+import de.yanneckreiss.mlkittutorial.viewmodel.HistoryViewModel
 
 @Composable
 fun MainScreen() {
-    // 1) Set up the CAMERA permission state
+    // 1) CAMERA permission
     val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
     val granted = permissionState.status.isGranted
-
-    // 2) As soon as we compose, if not granted, fire the OS dialog
-    LaunchedEffect(Unit) {
-        if (!granted) {
-            permissionState.launchPermissionRequest()
-        }
+    LaunchedEffect(granted) {
+        if (!granted) permissionState.launchPermissionRequest()
     }
 
-    // 3) Show either the grant-permission UI or our Nav graph
     if (!granted) {
         NoPermissionScreen(onRequestPermission = permissionState::launchPermissionRequest)
     } else {
-        val nav = rememberNavController()
-        val history = remember { mutableStateListOf<String>() }
+        // 2) Nav + ViewModel
+        val navController = rememberNavController()
+        val app = LocalContext.current.applicationContext as Application
+        val historyVm: HistoryViewModel = viewModel(
+            factory = HistoryViewModel.provideFactory(app)
+        )
+        val history by historyVm.historyList.collectAsState()
 
-        NavHost(navController = nav, startDestination = "home") {
+        NavHost(navController, startDestination = "home") {
             composable("home") {
                 HomeScreen(
-                    onLiveScan = { nav.navigate("camera") },
-                    onHistory  = { nav.navigate("history") }
+                    onLiveScan = { navController.navigate("camera") },
+                    onHistory  = { navController.navigate("history") }
                 )
             }
             composable("camera") {
                 CameraScreen(
-                    onBack       = { nav.popBackStack() },
+                    onBack       = { navController.popBackStack() },
                     onManualSnap = { text ->
-                        if (text.isNotBlank()) history.add(0, text)
+                        if (text.isNotBlank()) historyVm.insert(text)
                     }
                 )
             }
             composable("history") {
                 HistoryScreen(
                     history = history,
-                    onBack  = { nav.popBackStack() }
+                    onBack  = { navController.popBackStack() }
                 )
             }
         }
